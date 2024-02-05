@@ -1,0 +1,99 @@
+---
+title: "Assignment_1"
+name: Abhinav Reddy Yelipeddi
+date: "2024-02-04"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+dataset source: https://www.kaggle.com/datasets/benroshan/factors-affecting-campus-placement/data
+
+**Importing the dataset**
+
+This R code is using the `readr` package to read a CSV file named "Placement_Data_Full_Class.csv" and it stores the data in a variable called `dataset`.
+```{r lib}
+
+library(readr)
+dataset<- read_csv("C:/Users/Abhinav Reddy/Desktop/FML/Placement_Data_Full_Class.csv")
+```
+
+**Descriptive statistics:**
+
+**Displaying descriptive statistics for quantitative variables**
+
+This R code summarizes and prints descriptive statistics for a specified quantitative variables in a dataset. 
+
+```{r quant}
+quantitative_var<-c("sl_no","ssc_p","hsc_p","degree_p","etest_p","mba_p","salary")
+quantitative_summary<- summary(dataset[quantitative_var])
+print(quantitative_summary)
+```
+**Displaying descriptive statistics for categorical variables**
+
+This R code shows the frequency distribution of each category within the variables listed in categorical_var.
+```{r cate}
+categorical_var <- c("gender","ssc_b","hsc_b","degree_t","workex","specialisation")
+ categorical_summary<-table(dataset[categorical_var])
+print(head( categorical_summary))
+```
+**Transformation of a variable**
+
+This R code is transforming the salary variable by taking the logarithm and creating a new variable log_transformed_salary.
+```{r trans}
+dataset$log_transformed_salary <- log(dataset$salary)
+head(dataset)
+```
+
+This R code is transforming the mba_p variable by taking the square root and creating a new variable sqrt_transformed_mba_p.
+```{r trans2}
+dataset$sqrt_transformed_mba_p <- sqrt(dataset$mba_p)
+head(dataset)
+```
+**Plotting a quantitative variable**
+
+This R code generates a histogram for the mba_p variable in the dataset.
+
+```{r quan}
+quantitative_var1 <- "mba_p"
+hist(dataset[[quantitative_var1]], 
+     main = "Histogram of mba_p",
+     xlab = quantitative_var1,
+     col = "lightblue")
+```
+
+
+This R code generates a boxplot for the degree_p variable in the dataset.
+```{r boxplot}
+boxplot(dataset$degree_p, 
+        main = "Box Plot of a degree_p",
+        ylab = "Quantitative_Variable",
+        col = "lightgreen", border = "black")
+```
+
+
+**Plotting a Scatterplot**
+
+This scatter plot shows the relationship between salary variable and log_transformed_salary variable. 
+
+```{r plot}
+plot(x = dataset$'salary', y = dataset$log_transformed_salary, 
+     xlab = "salary", ylab = "log_transformed_salary", 
+     main = "Scatterplot of Salary vs Transformed Salary")
+```
+
+
+
+
+This scatter plot shows the relationship between of ssc_p variable and degree_p variable
+```{r plot2}
+plot(x = dataset$ssc_p, y = dataset$degree_p,
+     xlab = "SSC_Percentage", ylab = "Degree_Percentage",
+     main = "Scatter Plot of SSC Percentage vs Degree Percentage")
+```
+
