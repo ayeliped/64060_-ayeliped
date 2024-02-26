@@ -1,0 +1,323 @@
+---
+title: "Universal Bank"
+author: "Abhinav Reddy"
+date: "2024-02-25"
+output: pdf_document
+---
+
+Loading the required libraries and reading a CSV file named “UniversalBank.csv” and it stores the data in a variable called data.
+
+```{r libr}
+library(dplyr)
+library(class)
+library(caret)
+library(readr)
+data <- read_csv("C:/Users/Abhinav Reddy/Desktop/Assignment 2/UniversalBank.csv")
+
+```
+
+ + This below R code partitions the dataset into a training set comprising 60% of the data, amounting to 3000 observations, and a validation set comprising 40% of the data, totaling 2000 observations.
+```{r split}
+# Spliting the data into training (60%) and validation (40%) sets
+train_Index <- createDataPartition(data$`Personal Loan`, p = 0.6, list = FALSE, times = 1)
+training_data <- data[train_Index, ]
+validation_data <- data[-train_Index, ]
+
+
+dim(training_data)
+dim(validation_data)
+
+```
+
+
+Question 1: Age = 40, Experience = 10, Income = 84, Family = 2, CCAvg = 2, Education_1 = 0, Education_2 =
+1, Education_3 = 0, Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1, and
+Credit Card = 1. Perform a k-NN classification with all predictors except ID and ZIP code
+using k = 1. Remember to transform categorical predictors with more than two categories
+into dummy variables first. Specify the success class as 1 (loan acceptance), and use the
+default cutoff value of 0.5. How would this customer be classified?
+
+ + Answer 1. 
+ This below R code performs k-nearest neighbors classification to predict whether a new customer will accept a loan offer. It prepares the data, creates dummy variables for education, defines the attributes of a new customer, and predicts their classification using k = 1. Finally, it prints the classification result.
+```{r pressure}
+
+
+class_lbl <- data$"Personal Loan"
+
+head(class_lbl)
+
+# Convert Education into dummy variables
+data$Education_1 <- ifelse(data$Education == 1, 1, 0)
+data$Education_2 <- ifelse(data$Education == 2, 1, 0)
+data$Education_3 <- ifelse(data$Education == 3, 1, 0)
+data$"Personal Loan" <- as.factor(data$"Personal Loan")
+
+
+predictor <- data[, c("Age", "Experience", "Income", "Family", "CCAvg", 
+                        "Mortgage", "Securities Account", "CD Account", 
+                        "Online", "CreditCard", "Education_1", 
+                        "Education_2", "Education_3")]
+
+
+new__customer <- data.frame(
+  Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Mortgage = 0,
+  `Securities Account` = 0,
+  `CD Account` = 0,
+  Online = 1,
+  CreditCard = 1,
+  Education_1 = 0, 
+  Education_2 = 1,
+  Education_3 = 0
+)
+
+#  k-NN classification with k = 1
+knnmodel <- knn(train = predictor, test = new__customer, cl = class_lbl, k = 1)
+
+#classification of the new customer
+if (knnmodel == 1) {
+  print("The customer is classified as accepting the loan offer.\n")
+} else {
+  print("The customer is classified as not accepting the loan offer.\n")
+}
+
+
+```
+
+
+***
+
+Question 2: What is a choice of k that balances between overfitting and ignoring the predictor
+information?
+
+ + Answer 2. 
+ To balance between overfitting and ignoring predictor information in kNN:
+  
+  Always start with the low k values (e.g., 1, 3) to capture fine-grained patterns, but be cautious of    overfitting.
+
+  Gradually increase k until you find a sweet spot where the model generalizes well without oversimplifying.
+  Avoid very high k values, as they may lead to underfitting by oversmoothing the data.
+
+  Validate model performance using techniques like cross-validation and choose the k value that maximizes performance metrics on a validation set. For example:
+
+ + Example R code:
+
+```{r 2nd}
+
+
+k_value_s <- seq(1, 20, by = 2)  
+
+
+training_control <- trainControl(method = "cv", number = 10)  
+suppressWarnings({
+#finding the optimal k
+knn_grid <- expand.grid(k = k_value_s)
+knnmodel <- train(
+  x = predictor,
+  y = class_lbl,
+  method = "knn",
+  trControl = training_control,
+  tuneGrid = knn_grid
+)
+
+print(knnmodel)})
+```
+
+***
+
+Question 3: Show the confusion matrix for the validation data that results from using the best k? 
+
+ + Answer 3. 
+ The code performs cross-validation to find the best k value for k-nearest neighbors (k-NN) classification. It then trains the final k-NN model with the optimal k and evaluates its performance on validation data using a confusion matrix. The confusion matrix shows the model's accuracy, precision, recall, and F1 score.
+
+```{r 3rd}
+library(caret)
+
+#k values to try
+k_value_s <- seq(1, 20, by = 2)  
+
+training_control <- trainControl(method = "cv", number = 10) 
+
+suppressWarnings({
+knn_grid <- expand.grid(k = k_value_s)
+knnmodel <- train(
+  x = predictor,
+  y = class_lbl,
+  method = "knn",
+  trControl = training_control,
+  tuneGrid = knn_grid
+)
+})
+
+
+optimal_k <- knnmodel$bestTune$k
+
+final_knnmodel <- knn(train = as.matrix(predictor),
+                       test = as.matrix(predictor),
+                       cl = class_lbl,
+                       k = optimal_k)
+
+
+prediction <- as.factor(final_knnmodel)
+
+class_lbl <- as.factor(class_lbl)
+
+confusion_matrix <- confusionMatrix(prediction, class_lbl)
+
+
+print(confusion_matrix)
+
+```
+
+***
+
+Question 4: Consider the following customer: Age = 40, Experience = 10, Income = 84,
+Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0,
+Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit
+Card = 1. Classify the customer using the best k?
+
+ + Answer 4. 
+ Considering Age = 40, Experience = 10, Income = 84,
+Family = 2, CCAvg = 2, Education_1 = 0, Education_2 = 1, Education_3 = 0,
+Mortgage = 0, Securities Account = 0, CD Account = 0, Online = 1 and Credit
+Card = 1. 
+
+ + The provided code segment predicts whether a new customer will accept or reject a loan offer using a k-NN model trained on existing customer data.
+```{r 4th}
+
+new__customer <- data.frame(
+  Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Education_1 = 0,
+  Education_2 = 1,
+  Education_3 = 0,
+  Mortgage = 0,
+  `Securities Account` = 0,
+  `CD Account` = 0,
+  Online = 1,
+  `Credit Card` = 1
+)
+
+# Train the k-NN model with the optimal k value
+final_knnmodel <- knn(train = as.matrix(predictor),
+                       test = as.matrix(new__customer),
+                       cl = class_lbl, 
+                       k = optimal_k)
+
+
+new__customer_prediction <- as.factor(final_knnmodel)
+
+#prediction
+print(new__customer_prediction)
+
+
+```
+
+
+***
+
+Question 5: Repartition the data, this time into training, validation, and test sets (50% : 30% : 20%). Apply the k-NN method with the k chosen above. Compare the confusion matrix of the test set
+with that of the training and validation sets. Comment on the differences and their reason?
+
+ + Answer 5. 
+ This below R code splits the data into training, validation, and test sets, applies the k-NN method with the previously determined optimal k value, and compares the confusion matrices of the training, validation, and test sets. Differences in the confusion matrices indicate variations in the model's performance across the different datasets.
+
+```{r 5th}
+
+
+
+set.seed(123)
+
+# percentage for each set
+training_perc <- 0.5
+validation_per <- 0.3
+test_per <- 0.2
+
+
+train_indices <- createDataPartition(class_lbl, p = training_perc, list = FALSE)
+validation_test_data <- data[-train_indices, ]
+
+
+validation_per_adjusted <- validation_per / (validation_per + test_per)
+test_per_adjusted <- test_per / (validation_per + test_per)
+
+
+validation_indices <- createDataPartition(
+  validation_test_data$"Personal Loan",
+  p = validation_per_adjusted,
+  list = FALSE)
+validation_data <- validation_test_data[validation_indices, ]
+test_data <- validation_test_data[-validation_indices, ]
+
+
+final_knnmodel <- knn(train = predictor[train_indices, ],
+                       test = predictor[train_indices, ],
+                       cl = class_lbl[train_indices], 
+                       k = optimal_k)
+
+
+train_prediction <- as.factor(final_knnmodel)
+
+
+train_confusion_mat <- confusionMatrix(train_prediction, class_lbl[train_indices])
+
+
+validation_pred <- knn(train = predictor[train_indices, ],
+                              test = predictor[validation_indices, ],
+                              cl = class_lbl[train_indices], k = optimal_k)
+
+
+validation_confusion_mat <- confusionMatrix(
+  validation_pred,
+  class_lbl[validation_indices])
+
+
+test_pred <- knn(train = predictor[train_indices, ],
+                       test = predictor[-c(train_indices,
+                                           validation_indices),],
+                       cl = class_lbl[train_indices],
+                       k = optimal_k)
+
+
+test_confusion_mat <- confusionMatrix(
+  test_pred,
+  class_lbl[-c(train_indices, validation_indices)])
+
+
+print("Training Confusion Matrix:")
+print(train_confusion_mat)
+
+print("Validation Confusion Matrix:")
+print(validation_confusion_mat)
+
+print("Test Confusion Matrix:")
+print(test_confusion_mat)
+
+
+```
+
+
+# Differences and their reasons.
+
+ + Training set:- shows the best performance as the model is trained on this data. It exhibits low error rates and high accuracy.
+
+ + Validation set:- Shows slightly lower performance compared to the training set as the model is evaluated on unseen data. It helps assessing the model's generalization ability.
+
+ + Test set:- Provides a final assessment of the model's generalization ability. Performance should ideally be similar to or slightly worse than the validation set. Significant discrepancies may indicate the issue like overfitting.
+
+
+Differences in the performance across these sets helps to evaluate the model's ability to generalize the new data. Consistent performance indicates a robust model, while discrepancies may signal potential issues that need addressing.
+
+*** 
+
+### Thank You !
+
+
+
