@@ -1,0 +1,169 @@
+---
+title: "Pharmaceuticals"
+author: "Abhinav Reddy"
+output: pdf_document
+date: "2024-03-17"
+---
+
+This below R code is importing the required libraries.
+```{r }
+library(tidyverse)
+library(factoextra) 
+library(ISLR)
+library(caret)
+```
+
+This below R code is reading the CSV file named "Pharmaceuticals.csv" and removing the  rows with missing values, and the cleaned data is stored in a new data frame named "CD"
+
+```{r}
+inp_data <- read.csv("C:/Users/Abhinav Reddy/Desktop/FML/Assignment 4/Pharmaceuticals.csv")
+CD<- na.omit(inp_data)
+```
+
+Question (a): Use only the numerical variables (1 to 9) to cluster the 21 firms. Justify the various choices made in conducting the cluster analysis, such as weights for different variables, the specific clustering algorithm(s) used, the number of clusters formed, and so on?
+
+Answer:
+
+Numerical variables(1 to 9) are taken to cluster 21 firms.
+```{r }
+
+row.names(CD)<- CD[,1]
+CD1<- CD%>% select('Market_Cap', 'Beta', 'PE_Ratio', 'ROE', 'ROA', 'Asset_Turnover', 'Leverage', 'Rev_Growth', 'Net_Profit_Margin')
+head(CD1)
+```
+
+
+```{r }
+sc_data<-scale(CD1)
+head(sc_data)
+```
+
+```{r}
+fviz_nbclust(sc_data, kmeans, method = "wss") 
+fviz_nbclust(sc_data, kmeans, method = "silhouette")
+```
+
+From above graph based on the silhouette method, selecting **k = 5** maximizes average silhouette width, indicating that the data points are effectively clustered into the distinct groups.
+```{r 4}
+set.seed(123)
+k_n5<- kmeans(sc_data,centers=5,nstart = 25)
+k_n5
+k_n5$centers
+fviz_cluster(k_n5,data = sc_data) 
+
+D<- dist(sc_data, method = "euclidean")
+fviz_dist(D)
+Fit_<-kmeans(sc_data,5)
+aggregate(sc_data,by=list(Fit_$cluster),FUN=mean)
+CD3<-data.frame(sc_data,Fit_$cluster)
+head(CD3)
+library(cluster)
+clusplot(sc_data,Fit_$cluster,color = TRUE,shade = TRUE,labels = 2,lines = 0)
+
+
+```
+**Justification**
+
+-Variable Selection: numerical variables are used for clustering, ensuring compatibility with k-means algorithm.
+
+-Scaling: Data is scaled to prevent variables with larger scales from dominating the clustering process.
+
+-weights for different variables: Equal weights are assigned to all numerical variables.
+
+-Determining the Number of Clusters: Optimal number of clusters (k=5) is chosen based on silhouette method, indicating well-separated clusters.
+
+-Clustering Algorithm: K-means clustering.
+Visualization: Cluster is visualized using fviz_cluster and clusplot.
+
+***
+
+Question (b): Interpret the clusters with respect to the numerical variables used in forming the clusters?
+
+Answer:
+
+Interpreting clusters using mean values of quantitative variables shows the cluster characteristics and differences among the clusters.
+```{r}
+aggregate(sc_data,by=list(Fit_$cluster),FUN=mean)
+
+```
+Interpreting:
+
+- **Cluster 1**:
+  - Highest: Beta (Mean: 1.263)
+  - Lowest: Asset_Turnover (Mean: -0.461)
+  - Moderate: Market_Cap (Mean: -0.977), PE_Ratio (Mean: 0.033), ROE (Mean: -0.112), ROA (Mean: -1.168), Leverage (Mean: 3.743), Rev_Growth (Mean: -0.633), Net_Profit_Margin (Mean: -1.249)
+
+- **Cluster 2**:
+  - Highest: Rev_Growth (Mean: 1.226)
+  - Lowest: Asset_Turnover (Mean: -1.107)
+  - Moderate: Market_Cap (Mean: -0.796), Beta (Mean: 0.321), PE_Ratio (Mean: -0.450), ROE (Mean: -0.653), ROA (Mean: -0.788), Leverage (Mean: 0.272), Net_Profit_Margin (Mean: -0.149)
+
+- **Cluster 3**:
+  - Highest: Asset_Turnover (Mean: 0.173), Net_Profit_Margin (Mean: 0.557)
+  - Lowest: Leverage (Mean: -0.274), Rev_Growth (Mean: -0.704)
+  - Moderate: Market_Cap (Mean: -0.031), Beta (Mean: -0.436), PE_Ratio (Mean: -0.317), ROE (Mean: 0.195), ROA (Mean: 0.408)
+
+- **Cluster 4**:
+  - Highest: PE_Ratio (Mean: 1.850)
+  - Lowest: Asset_Turnover (Mean: 0), Net_Profit_Margin (Mean: -1.610)
+  - Moderate: Market_Cap (Mean: -0.525), Beta (Mean: 0.445), ROE (Mean: -1.040), ROA (Mean: -1.187), Leverage (Mean: -0.344), Rev_Growth (Mean: -0.577)
+
+- **Cluster 5**:
+  - Highest: Net_Profit_Margin (Mean: 0.591)
+  - Lowest: Leverage (Mean: -0.468)
+  - Moderate: Market_Cap (Mean: 1.696), Beta (Mean: -0.178), PE_Ratio (Mean: -0.198), ROE (Mean: 1.235), ROA (Mean: 1.350), Asset_Turnover (Mean: 1.153), Rev_Growth (Mean: 0.467)
+  
+***
+
+Question (c): Is there a pattern in the clusters with respect to the numerical variables (10 to 12)? (those not used in forming the clusters)
+
+Answer:
+
+```{r}
+Pharma_Pattern <- inp_data %>% select(c(12,13,14)) %>% mutate(Cluster = k_n5$cluster)
+print(Pharma_Pattern)
+
+```
+**There is a pattern in the clusters with respect to the Median_Recommendation variable.**
+
+- Cluster 1: Mix of recommendations like Moderate Buy, Strong Buy, Moderate Sell, and Hold, with                      companies from various locations and exchanges.
+- Cluster 2: Mostly filled with Hold recommendations, mainly listed on NYSE and NASDAQ.
+- Cluster 3: Dominated by Hold recommendations, primarily listed on NYSE.
+- Cluster 4: Mainly consists of Hold and Moderate Buy recommendations, listed predominantly on NYSE.
+- Cluster 5: Mix of recommendations like Moderate Buy, Moderate Sell, and Hold, with companies from                   various locations and exchanges.
+
+
+***
+
+Question (d): Provide an appropriate name for each cluster using any or all of the variables in the dataset?
+
+Answer: Appropriate name for each cluster:
+ 
+ + **Cluster 1:** Mixed Recommendations
+ + **Cluster 2:** Stable Portfolio Holdings
+ + **Cluster 3:** Established Market Positions
+ + **Cluster 4:** Growth Potential
+ + **Cluster 5:** Diverse Investment Profiles
+```{r}
+library(ggplot2)
+
+
+cn <- c("Mixed Recommendations",
+                   "Stable Portfolio Holdings",
+                   "Established Market Positions",
+                   "Growth Potential",
+                   "Diverse Investment Profiles")
+
+p <- fviz_cluster(k_n5, data = sc_data,
+                  main = "Clusters with names") +
+  annotate("text", x = k_n5$centers[,1],
+           y = k_n5$centers[,2], label = cn,
+           color = "black", size = 5)
+
+print(p)
+```
+
+
+***
+
+# Thank You!!!
