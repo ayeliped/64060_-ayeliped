@@ -1,0 +1,194 @@
+---
+title: "Cereals"
+author: "Abhinav Reddy"
+date: "2024-04-08"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+Required Libraries.
+```{r}
+
+library(cluster)
+library(caret)
+library(dendextend)
+library(knitr)
+library(factoextra)
+library(readr)
+
+```
+
+
+ + Creating a data collection with only Numbers by Importing Cereals Dataset.
+```{r}
+
+Cereals <- read.csv("C:/Users/Abhinav Reddy/Desktop/Assignment5/Cereals.csv")
+View(Cereals)
+df <- data.frame(Cereals[,4:16])
+
+```
+
+
+ + Removing all Cereals with the missing values.
+```{r}
+df <- na.omit(df)
+```
+
+
+ + Normalizing the data using the Scale Function
+```{r}
+df_normalize <- scale(df)
+```
+
+
+# Task 1
+Apply hierarchical clustering to the data using Euclidean distance to the normalized
+measurements. Use Agnes to compare the clustering from single linkage, complete
+linkage, average linkage, and Ward. Choose the best method.
+```{r}
+Distance <- dist(df_normalize, method = "euclidean")
+H_cluster <- hclust(Distance, method = "complete")
+```
+
+```{r}
+#Dendogram Plot Process
+plot(H_cluster, cex = 0.7, hang = -1)
+
+```
+
+
+ + Perform calculations with several linkage techniques and the AGNES clustering algorithm.
+```{r}
+single.Hcluster <- agnes(df_normalize, method = "single")
+complete.Hcluster <- agnes(df_normalize, method = "complete")
+average.Hcluster <- agnes(df_normalize, method = "average")
+ward.Hcluster <- agnes(df_normalize, method = "ward")
+```
+
+ + Choose the Appropriate Course of Action
+```{r}
+
+print(single.Hcluster$ac)
+print(complete.Hcluster$ac)
+print(average.Hcluster$ac)
+print(ward.Hcluster$ac)
+
+```
+ + By this we can conclude that the Ward Strategy is the most appropriate and value of 0.9029485 by the facts provided upon.
+
+*** 
+
+# Task 2
+ 
+ + How many clusters would you choose?
+```{r}
+
+pltree(ward.Hcluster, cex = 0.5, hang = -1, main = "Dendrogram of agnes (Using Ward Strategy)")
+rect.hclust(ward.Hcluster, k = 5, border = 2:7)
+f.Group <- cutree(ward.Hcluster, k=5)
+Dframe_2 <- as.data.frame(cbind(df_normalize,f.Group))
+
+```
+
+```{r}
+fviz_cluster(list(data = Dframe_2, cluster = f.Group))
+```
+
+By the formed clusters above seen we can conclude 5 Clusters.
+
+***
+
+# Task 3
+ + Comment on the structure of the clusters and on their stability.
+```{r}
+#Dividing the Dataframe into 2 Partitions
+set.seed(123)
+Partition_1 <- df[1:50,]
+Partition_2 <- df[51:74,]
+```
+
+
+ + Applying Hierarchical Clustering with k = 5 in mind. Compute for the training dataset using AGNES and various linking techniques.
+```{r}
+
+single.dframe <- agnes(scale(Partition_1), method = "single")
+complete.dframe <- agnes(scale(Partition_1), method = "complete")
+average.dframe <- agnes(scale(Partition_1), method = "average")
+ward.dframe <- agnes(scale(Partition_1), method = "ward")
+cbind(single=single.dframe$ac , complete=complete.dframe$ac , average= average.dframe$ac , ward= ward.dframe$ac)
+pltree(ward.dframe, cex = 0.6, hang = -1, main = "Dendogram of Agnes with Partitioned Data (Using Ward Strategy)")
+rect.hclust(ward.dframe, k = 5, border = 2:7)
+cut.2 <- cutree(ward.dframe, k = 5)
+
+```
+
+
+ + Centeroids to be Calculated.
+```{r}
+
+dframe.result <- as.data.frame(cbind(Partition_1, cut.2))
+dframe.result[dframe.result$cut.2==1,]
+centroid.1 <- colMeans(dframe.result[dframe.result$cut.2==1,])
+dframe.result[dframe.result$cut.2==2,]
+centroid.2 <- colMeans(dframe.result[dframe.result$cut.2==2,])
+dframe.result[dframe.result$cut.2==3,]
+centroid.3 <- colMeans(dframe.result[dframe.result$cut.2==3,])
+dframe.result[dframe.result$cut.2==4,]
+centroid.4 <- colMeans(dframe.result[dframe.result$cut.2==4,])
+CentRoids <- rbind(centroid.1, centroid.2, centroid.3, centroid.4)
+x2 <- as.data.frame(rbind(CentRoids[,-14], Partition_2))
+
+```
+
+ + Distance between the Centeroids to be calculated
+```{r}
+
+Distance.1 <- get_dist(x2)
+matrix.1 <- as.matrix(Distance.1)
+Dataframe.1 <- data.frame(data=seq(1,nrow(Partition_2),1), Clusters = rep(0,nrow(Partition_2)))
+for(i in 1:nrow(Partition_2)) 
+  {Dataframe.1[i,2] <- which.min(matrix.1[i+4, 1:4])}
+Dataframe.1
+cbind(Dframe_2$f.Group[51:74], Dataframe.1$Clusters)
+table(Dframe_2$f.Group[51:74] == Dataframe.1$Clusters)
+
+```
+
+
+ + By the observations mentioned above we conclude that 12 are True and 12 are False, so we can tell that the model is Evenly distributed and Partially Unstabled. 
+
+***
+
+# Task 4
+ + The elementary public schools would like to choose a set of cereals to include in their
+daily cafeterias. Every day a different cereal is offered, but all cereals should support a
+healthy diet. For this goal, you are requested to find a cluster of “healthy cereals.”
+Should the data be normalized? If not, how should they be used in the cluster analysis?
+```{r}
+#Clustering the data into clusters with a aim of Healthy Cereal cluster
+healthy.data <- df
+healthy.data_RD <- na.omit(healthy.data)
+clust <- cbind(healthy.data_RD, f.Group)
+clust[clust$f.Group==1,]
+clust[clust$f.Group==2,]
+clust[clust$f.Group==3,]
+clust[clust$f.Group==4,]
+
+```
+
+
+ + Mean is used for the analysis to make out the Best Cluster
+```{r}
+
+mean(clust[clust$f.Group==1,"rating"])
+mean(clust[clust$f.Group==2,"rating"])
+mean(clust[clust$f.Group==3,"rating"])
+mean(clust[clust$f.Group==4,"rating"])
+
+```
+ + By the mean of all the clusters among the four, Cluster 1 has the most value  which is 73.84446 while comparing with the remaining clusters. By this we can confirm that the Group 1 will be the most healthiest diet and the cluster of "Healthy cereals" for the Elementary Public Schools.
+ 
+ 
+### Thank You !!!
